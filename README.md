@@ -1,19 +1,16 @@
-# Marketing Attribution & LTV Dashboard  
+# Marketing Attribution & LTV Dashboard
 *(MySQL + Python + Power BI)*
 
-This project integrates **MySQL databases**, **Python processing**, and **Power BI visualization** to analyze marketing campaign effectiveness through different **attribution models** and business metrics such as **LTV**, **CAC**, and **ROAS**.
-
+This project integrates **MySQL databases**, **Python processing**, and **Power BI visualization** to analyze marketing campaign effectiveness through different **attribution models** and business metrics such as **observed LTV**, **cost per purchasing customer**, and **ROAS**.
 
 ## Project Structure
-- `powerbi/` — final Power BI dashboard (`Dashboard_P1.pbix`) stored via Git LFS  
-- `sql/` — SQL scripts to create and populate tables  
-- `scripts/` — Python ETL scripts  
-- `data/` — (optional) sample data  
-- `requirements.txt` — Python dependencies  
-- `.env.example` — example environment variables  
-- `README.md` — project documentation 
-
-
+- `powerbi/` — Power BI report and metric update instructions (`Dashboard_P1.pbix`) stored via Git LFS
+- `sql/` — SQL scripts to create and populate tables
+- `scripts/` — Python ETL scripts
+- `data/` — (optional) sample data
+- `requirements.txt` — Python dependencies
+- `.env.example` — example environment variables
+- `README.md` — project documentation
 
 ## How to Run the Project
 
@@ -22,9 +19,8 @@ This project integrates **MySQL databases**, **Python processing**, and **Power 
 - .\.venv\Scripts\activate   # On Windows
 - pip install -r requirements.txt
 
-
 ### 2. Configure environment variables
-- Create a **.env** file based  on **env.example**:
+- Create a **.env** file based on **.env.example**:
 - MYSQL_HOST=localhost
 - MYSQL_PORT=3306
 - MYSQL_USER=demo_user
@@ -32,22 +28,22 @@ This project integrates **MySQL databases**, **Python processing**, and **Power 
 - MYSQL_DB=analytics_portfolio
 
 ### 3. Load database
-Run the SQL scripts inside **sql/** to create tables and populate initial data.
+From the repository root, run `python -m scripts.run_pipeline` to create the database, load the bundled CSVs and build attribution/LTV tables.
 
 ### 4. Connect Power BI
 - Open **powerbi/Dashboard_P1.pbix**
 - Update connection credentials to your **MySQL** instance
-- Refresh data
+- Apply `powerbi/metric_fixes.dax`, refresh data and complete `powerbi/VALIDATION.md` before treating the report as updated.
 
 ## Key metrics
-- **Attributed Revenue (Selected)** - Revenue assigned to a channel based on chosen attribution model 
+- **Attributed Revenue (Selected)** - Revenue assigned to a channel based on chosen attribution model
 - **Total Revenue (Selected)** - Total revenue from orders
 - **Orders (Selected)** - Unique orders
 - **Customers (Selected)** – Unique customers
 - **Total Spend (Selected)** – Total marketing spend
-- **CAC (Selected)** – Customer acquisition cost
+- **Cost per Purchasing Customer (Selected)** – Spend divided by period purchasing customers
 - **Avg LTV (sel)** – Average lifetime value, adjusted by horizon_days
-- **LTV/CAC (sel)** – Ratio between lifetime value and acquisition cost
+- **LTV / Buyer Cost (sel)** – Mature cohort value compared with period buyer cost; not acquisition LTV/CAC
 - **ROAS (Selected)** – Return on advertising spend
 
 ## Attribution Models Implemented
@@ -56,31 +52,41 @@ Run the SQL scripts inside **sql/** to create tables and populate initial data.
 - **Linear** – Distributes value evenly across all touchpoints
 - **Time Decay** – Gives more weight to touchpoints closer to the purchase
 
-## Filters and segmentation 
+## Filters and segmentation
 - Date range
 - Attribution model
 - Marketing channel
 - Horizon Days
 
 ## Dashboard example
+
+Historical layout screenshots; the PBIX still requires the Desktop metric update described below.
+
 <img width="1182" height="657" alt="image" src="https://github.com/user-attachments/assets/f407b83e-cb62-4d80-8d6f-b6ebd03a58ac" />
 <img width="1178" height="661" alt="image" src="https://github.com/user-attachments/assets/bd6a593c-f134-4447-8ba1-d7fba663b881" />
 <img width="1175" height="656" alt="image" src="https://github.com/user-attachments/assets/1283ac03-1fea-4140-a93a-dc9e1a557d41" />
 
 ## Actionable Insights From The Dashboard
-- Identify which channels generate **customers with better LTV/CAC**
-- Detect campaigns producing **negative ROAS** that should be optimized  or discontinued
-- Compare how metrics change under **different attribution models** 
+- Compare channel-attributed revenue, spend and cost per purchasing customer
+- Inspect mature customer cohort value across observation horizons
+- Detect campaigns producing **ROAS below 1 (attributed revenue below advertising spend)** that should be optimized  or discontinued
+- Compare how metrics change under **different attribution models**
 
-## Notes 
+## Notes
 - The .pbix file is stored using Git LFS due to its size.
 - The actual .env file is never uploaded; use .env.example as a template.
 - Sample data is fictional and does not represent real customer information.
 
-## Credits
-Project developed as part of a data analytics portfolio, integrating SQL, Python, and Power BI.
+## Reproduce the data pipeline
 
+Python 3.12 + MySQL 8. Install `requirements.txt`, configure `.env`, then run `python -m scripts.run_pipeline` from the repository root. The bundled CSVs can be used directly; `python -m scripts.generate_data` regenerates the sample. The configured user needs database/table creation permissions.
 
+Run checks with `pip install -r requirements-dev.txt` then `python -m pytest -q`. LTV includes zero-purchase acquired customers and only fully observed horizons. `ANALYTICS_AS_OF_DATE` specifies the actual observation end; otherwise it is inferred conservatively from the latest source observation. Never set it to a future date just to make a cohort mature.
 
+Attribution preserves unassigned orders in an explicit Unattributed channel and distributes whole cents without losing revenue.
 
+## Power BI validation status
 
+The original PBIX and screenshots are historical. Python corrections do not modify the binary model automatically. Apply `powerbi/metric_fixes.dax` and complete `powerbi/VALIDATION.md` in Desktop before publishing the dashboard as corrected. CAC/attribution-cohort comparisons are limited by the sample's acquisition information.
+
+The MySQL integration check is `python -m scripts.verify_metrics`. CI rebuilds twice against MySQL 8 and verifies per-order conservation for all four attribution models, purchase/customer identity and LTV domain constraints.

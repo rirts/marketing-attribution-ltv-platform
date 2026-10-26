@@ -1,0 +1,29 @@
+-- Replace these measures in Dashboard_P1.pbix, then validate in Power BI Desktop.
+-- Existing slicers use fact_ltv_cohort[horizon_days], not Horizon[Value].
+Selected Horizon =
+IF(
+    HASONEVALUE('analytics_portfolio fact_ltv_cohort'[horizon_days]),
+    SELECTEDVALUE('analytics_portfolio fact_ltv_cohort'[horizon_days]),
+    IF(ISFILTERED('analytics_portfolio fact_ltv_cohort'[horizon_days]), BLANK(), 180)
+)
+
+Avg LTV (sel) =
+VAR h = [Selected Horizon]
+RETURN IF(NOT ISBLANK(h),
+    CALCULATE(
+        AVERAGE('analytics_portfolio fact_ltv_cohort'[revenue]),
+        TREATAS({h}, 'analytics_portfolio fact_ltv_cohort'[horizon_days])
+    )
+)
+
+Avg LTV by Horizon =
+AVERAGE('analytics_portfolio fact_ltv_cohort'[revenue])
+
+-- Accurate name for the existing denominator (buyers, including repeat buyers).
+-- Rename CAC (Selected) to Cost per Purchasing Customer (Selected), and update its visuals.
+Cost per Purchasing Customer (Selected) =
+DIVIDE([Total Spend (Selected)], [Customers (Selected)])
+
+-- Do not call this LTV/CAC: it compares mature cohort value with period buyer cost.
+LTV / Buyer Cost (sel) =
+DIVIDE([Avg LTV (sel)], [Cost per Purchasing Customer (Selected)])
