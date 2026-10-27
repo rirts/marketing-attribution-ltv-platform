@@ -1,0 +1,39 @@
+-- Applied measure definitions in the committed Dashboard_P1.pbix.
+-- Existing slicers use fact_ltv_cohort[horizon_days], not Horizon[Value].
+Selected Horizon =
+IF(
+    HASONEVALUE('analytics_portfolio fact_ltv_cohort'[horizon_days]),
+    SELECTEDVALUE('analytics_portfolio fact_ltv_cohort'[horizon_days]),
+    IF(ISFILTERED('analytics_portfolio fact_ltv_cohort'[horizon_days]), BLANK(), 180)
+)
+
+Avg LTV (sel) =
+VAR h = [Selected Horizon]
+RETURN IF(NOT ISBLANK(h),
+    CALCULATE(
+        AVERAGE('analytics_portfolio fact_ltv_cohort'[revenue]),
+        TREATAS({h}, 'analytics_portfolio fact_ltv_cohort'[horizon_days])
+    )
+)
+
+Avg LTV by Horizon =
+AVERAGE('analytics_portfolio fact_ltv_cohort'[revenue])
+
+-- Accurate name for the existing denominator (buyers, including repeat buyers).
+-- Rename CAC (Selected) to Cost per Purchasing Customer (Selected), and update its visuals.
+Cost per Purchasing Customer (Selected) =
+DIVIDE([Total Spend (Selected)], [Customers (Selected)])
+
+-- Replace the LTV/CAC card's field with [Avg LTV (sel)].
+-- Show cohort LTV and period purchasing-customer cost separately; their populations differ.
+
+-- The card must display allocated revenue, not full shared-order revenue.
+Total Revenue (Selected) =
+[Attributed Revenue (Selected)]
+
+-- Calendar calculated column used by the Page 3 axis (ascending).
+YearMonth =
+FORMAT('Calendar'[Date], "yyyy-MM")
+
+-- The obsolete LTV/CAC (sel) measure was removed from the model.
+

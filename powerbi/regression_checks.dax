@@ -1,0 +1,49 @@
+-- Run in Power BI Desktop's DAX query view, not as a new measure/table.
+-- Each model must return 108 orders and 7,951.11 in both revenue columns.
+EVALUATE
+SUMMARIZECOLUMNS(
+    'analytics_portfolio fact_attribution'[model],
+    "Orders", [Orders (Selected)],
+    "Attributed Revenue", [Attributed Revenue (Selected)],
+    "Revenue Card", [Total Revenue (Selected)],
+    "Difference", [Total Revenue (Selected)] - [Attributed Revenue (Selected)]
+)
+
+-- Split-credit regression: Google Ads cannot receive the full shared orders.
+EVALUATE
+SUMMARIZECOLUMNS(
+    'analytics_portfolio fact_attribution'[model],
+    TREATAS({"Google Ads"}, 'analytics_portfolio dim_channel'[channel_name]),
+    "Attributed Revenue", [Attributed Revenue (Selected)],
+    "Revenue Card", [Total Revenue (Selected)],
+    "Expected Revenue",
+        SWITCH(
+            SELECTEDVALUE('analytics_portfolio fact_attribution'[model]),
+            "first_click", 1172.43,
+            "last_click", 1892.48,
+            "linear", 1171.85,
+            "time_decay", 1137.10
+        ),
+    "Difference", [Total Revenue (Selected)] - [Attributed Revenue (Selected)]
+)
+
+-- Eligible customers: 80, 80, 80, 63 at 30, 60, 90, 180 days.
+EVALUATE
+SUMMARIZECOLUMNS(
+    'analytics_portfolio fact_ltv_cohort'[horizon_days],
+    "Eligible Customers", COUNTROWS('analytics_portfolio fact_ltv_cohort'),
+    "Mean Observed Revenue", [Avg LTV by Horizon]
+)
+ORDER BY 'analytics_portfolio fact_ltv_cohort'[horizon_days]
+
+-- No horizon filter: 180 and approximately 96.125556.
+EVALUATE
+ROW("Default Horizon", [Selected Horizon], "Default LTV", [Avg LTV (sel)])
+
+-- Multiple horizons: both values must be blank.
+EVALUATE
+CALCULATETABLE(
+    ROW("Selected Horizon", [Selected Horizon], "Selected LTV", [Avg LTV (sel)]),
+    TREATAS({30, 60}, 'analytics_portfolio fact_ltv_cohort'[horizon_days])
+)
+
