@@ -43,7 +43,6 @@ From the repository root, run `python -m scripts.run_pipeline` to create the dat
 - **Total Spend (Selected)** – Total marketing spend
 - **Cost per Purchasing Customer (Selected)** – Spend divided by period purchasing customers
 - **Avg LTV (sel)** – Average lifetime value, adjusted by horizon_days
-- **LTV / Buyer Cost (sel)** – Mature cohort value compared with period buyer cost; not acquisition LTV/CAC
 - **ROAS (Selected)** – Return on advertising spend
 
 ## Attribution Models Implemented
@@ -90,3 +89,11 @@ Attribution preserves unassigned orders in an explicit Unattributed channel and 
 The original PBIX and screenshots are historical. Python corrections do not modify the binary model automatically. Apply `powerbi/metric_fixes.dax` and complete `powerbi/VALIDATION.md` in Desktop before publishing the dashboard as corrected. CAC/attribution-cohort comparisons are limited by the sample's acquisition information.
 
 The MySQL integration check is `python -m scripts.verify_metrics`. CI rebuilds twice against MySQL 8 and verifies per-order conservation for all four attribution models, purchase/customer identity and LTV domain constraints.
+
+## Refresh a Desktop copy without a local Python environment
+
+The metrics workflow tests against MySQL 8.0.42 and publishes a `marketing-corrected-mysql-snapshot` artifact after the pipeline passes. Its `marketing_corregido.sql` file creates **analytics_portfolio_corrected** and imports the eight corrected tables. It does not drop or overwrite the original `analytics_portfolio` database. This is a one-time import into a fresh destination; an existing destination must be handled explicitly before a repeat import.
+
+CI restores the SQL into a separate database, compares primary-key-ordered row hashes and row counts for every table, reruns metric invariants, and verifies the source database remains unchanged. `snapshot-validation.json` records those checks and the snapshot hash.
+
+In Power BI, change the MySQL database and any Power Query navigation schema keys to `analytics_portfolio_corrected`. Preserve the existing Power Query query names so the DAX table references remain valid. Then refresh, complete the Desktop checklist, and save a new PBIX. Display LTV and purchasing-customer cost separately rather than a ratio of mismatched cohort/period populations.

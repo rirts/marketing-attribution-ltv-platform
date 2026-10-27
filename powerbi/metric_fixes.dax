@@ -24,6 +24,5 @@ AVERAGE('analytics_portfolio fact_ltv_cohort'[revenue])
 Cost per Purchasing Customer (Selected) =
 DIVIDE([Total Spend (Selected)], [Customers (Selected)])
 
--- Do not call this LTV/CAC: it compares mature cohort value with period buyer cost.
-LTV / Buyer Cost (sel) =
-DIVIDE([Avg LTV (sel)], [Cost per Purchasing Customer (Selected)])
+-- Replace the LTV/CAC card's field with [Avg LTV (sel)].
+-- Show cohort LTV and period purchasing-customer cost separately; their populations differ.

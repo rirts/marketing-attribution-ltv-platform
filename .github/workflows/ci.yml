@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:8.0.42
         env:
           MYSQL_ROOT_PASSWORD: analytics_test
           MYSQL_ROOT_HOST: '%'
@@ -32,3 +32,18 @@ jobs:
           python -m scripts.run_pipeline
           python -m scripts.run_pipeline
           python -m scripts.verify_metrics
+      - name: Export and restore-test Desktop snapshot
+        env:
+          MYSQL_CONTAINER_ID: ${{ job.services.mysql.id }}
+        run: |
+          python -m scripts.export_snapshot
+          MYSQL_DB=analytics_portfolio_corrected python -m scripts.verify_metrics
+      - name: Upload verified MySQL snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketing-corrected-mysql-snapshot
+          path: |
+            artifacts/marketing_corregido.sql
+            artifacts/snapshot-validation.json
+          if-no-files-found: error
+          retention-days: 30
