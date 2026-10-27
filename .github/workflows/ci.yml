@@ -32,6 +32,8 @@ jobs:
           python -m scripts.run_pipeline
           python -m scripts.run_pipeline
           python -m scripts.verify_metrics
+      - name: Verify committed Power BI data and definitions
+        run: python -m scripts.verify_powerbi
       - name: Export and restore-test Desktop snapshot
         env:
           MYSQL_CONTAINER_ID: ${{ job.services.mysql.id }}
@@ -45,5 +47,7 @@ jobs:
           path: |
             artifacts/marketing_corregido.sql
             artifacts/snapshot-validation.json
+            artifacts/powerbi-validation.json
           if-no-files-found: error
           retention-days: 30
+

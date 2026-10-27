@@ -1,4 +1,4 @@
--- Replace these measures in Dashboard_P1.pbix, then validate in Power BI Desktop.
+-- Applied measure definitions in the committed Dashboard_P1.pbix.
 -- Existing slicers use fact_ltv_cohort[horizon_days], not Horizon[Value].
 Selected Horizon =
 IF(
@@ -26,3 +26,14 @@ DIVIDE([Total Spend (Selected)], [Customers (Selected)])
 
 -- Replace the LTV/CAC card's field with [Avg LTV (sel)].
 -- Show cohort LTV and period purchasing-customer cost separately; their populations differ.
+
+-- The card must display allocated revenue, not full shared-order revenue.
+Total Revenue (Selected) =
+[Attributed Revenue (Selected)]
+
+-- Calendar calculated column used by the Page 3 axis (ascending).
+YearMonth =
+FORMAT('Calendar'[Date], "yyyy-MM")
+
+-- The obsolete LTV/CAC (sel) measure was removed from the model.
+

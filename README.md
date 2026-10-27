@@ -1,99 +1,115 @@
-# Marketing Attribution & LTV Dashboard
-*(MySQL + Python + Power BI)*
+# Marketing Attribution & Cohort LTV
+**MySQL · Python · Power BI**
 
-This project integrates **MySQL databases**, **Python processing**, and **Power BI visualization** to analyze marketing campaign effectiveness through different **attribution models** and business metrics such as **observed LTV**, **cost per purchasing customer**, and **ROAS**.
+A reproducible analytics pipeline and three-page Power BI report for comparing first-click, last-click, linear and time-decay attribution. The model conserves order revenue to the cent and measures observed cohort revenue at fully observed horizons.
 
-## Project Structure
-- `powerbi/` — Power BI report and metric update instructions (`Dashboard_P1.pbix`) stored via Git LFS
-- `sql/` — SQL scripts to create and populate tables
-- `scripts/` — Python ETL scripts
-- `data/` — (optional) sample data
-- `requirements.txt` — Python dependencies
-- `.env.example` — example environment variables
-- `README.md` — project documentation
+## Report
 
-## How to Run the Project
+Open [Dashboard_P1.pbix](powerbi/Dashboard_P1.pbix) in Power BI Desktop. The report contains the corrected imported sample; a local MySQL connection is needed to refresh it, rather than to view its existing data.
 
-### 1. Set up Python environment
-- python -m venv .venv
-- .\.venv\Scripts\activate   # On Windows
-- pip install -r requirements.txt
+- **Page 1:** attributed revenue, orders, spend, cost per buyer, ROAS and cohort LTV.
+- **Page 2:** channel-attributed revenue and ROAS.
+- **Page 3:** chronological monthly revenue and cost per buyer by channel.
 
-### 2. Configure environment variables
-- Create a **.env** file based on **.env.example**:
-- MYSQL_HOST=localhost
-- MYSQL_PORT=3306
-- MYSQL_USER=demo_user
-- MYSQL_PASSWORD=demo_pass
-- MYSQL_DB=analytics_portfolio
+![Monthly performance in Power BI Desktop](powerbi/screenshots/monthly-performance.png)
 
-### 3. Load database
-From the repository root, run `python -m scripts.run_pipeline` to create the database, load the bundled CSVs and build attribution/LTV tables.
+The screenshot shows the refreshed Desktop report, using all channels and last-click attribution. November 2024 and November 2025 are separate months.
 
-### 4. Connect Power BI
-- Open **powerbi/Dashboard_P1.pbix**
-- Update connection credentials to your **MySQL** instance
-- Apply `powerbi/metric_fixes.dax`, refresh data and complete `powerbi/VALIDATION.md` before treating the report as updated.
+## Metric definitions
 
-## Key metrics
-- **Attributed Revenue (Selected)** - Revenue assigned to a channel based on chosen attribution model
-- **Total Revenue (Selected)** - Total revenue from orders
-- **Orders (Selected)** - Unique orders
-- **Customers (Selected)** – Unique customers
-- **Total Spend (Selected)** – Total marketing spend
-- **Cost per Purchasing Customer (Selected)** – Spend divided by period purchasing customers
-- **Avg LTV (sel)** – Average lifetime value, adjusted by horizon_days
-- **ROAS (Selected)** – Return on advertising spend
+| Metric | Definition and scope |
+|---|---|
+| Attributed Revenue (Selected) | The selected model's share of order revenue for the selected channels and order dates. |
+| Total Revenue (Selected) | Alias of attributed revenue, so the overview card and channel charts use the same allocation. |
+| Orders (Selected) | Distinct orders with credit assigned to the selected channels/model within the order-date range. Channel counts can overlap under split-credit models. |
+| Customers (Selected) | Distinct buyers on those orders, including repeat buyers. These counts are not additive across channels. |
+| Total Spend (Selected) | Spend for the selected channels and calendar dates. |
+| Cost per Buyer | Selected spend divided by those distinct purchasing customers. It is a period buyer-cost metric, not acquisition-cohort CAC. |
+| Cohort LTV | Mean observed revenue per eligible signed-up customer at 30/60/90/180 days, including customers with zero purchases. Only customers with the complete observation window are included. |
+| ROAS | Attributed revenue divided by spend; a ratio, not a percentage. |
 
-## Attribution Models Implemented
-- **First Click** – Assigns all value to the first customer touchpoint
-- **Last Click** – Assigns all value to the last touchpoint before purchase
-- **Linear** – Distributes value evenly across all touchpoints
-- **Time Decay** – Gives more weight to touchpoints closer to the purchase
+Select exactly one attribution model. For cohort LTV, no horizon selection defaults to 180 days; selecting multiple horizons returns a blank card. Channel, order-date and model selectors do not filter the LTV visuals. The LTV line retains all four horizons.
 
-## Filters and segmentation
-- Date range
-- Attribution model
-- Marketing channel
-- Horizon Days
+Eligibility changes by horizon, so the LTV line does not necessarily compare identical customer populations. Cohort LTV and period buyer cost are shown separately because their populations and time windows differ.
 
-## Dashboard example
+All source data is synthetic. Amounts use one shared demo monetary unit; the source files do not specify an ISO currency. The report's dollar sign is a display convention, and no foreign-exchange conversion is applied. Treat the data as a metric demonstration, not business evidence for a budget decision.
 
-Historical layout screenshots; the PBIX still requires the Desktop metric update described below.
+## Validated sample
 
-<img width="1182" height="657" alt="image" src="https://github.com/user-attachments/assets/f407b83e-cb62-4d80-8d6f-b6ebd03a58ac" />
-<img width="1178" height="661" alt="image" src="https://github.com/user-attachments/assets/bd6a593c-f134-4447-8ba1-d7fba663b881" />
-<img width="1175" height="656" alt="image" src="https://github.com/user-attachments/assets/1283ac03-1fea-4140-a93a-dc9e1a557d41" />
+| Check | Value |
+|---|---:|
+| Customers | 80 |
+| Orders | 108 |
+| Order revenue / each model's total attributed revenue | 7,951.11 |
+| Attribution rows | 1,310 |
+| Eligible customer/horizon LTV rows | 303 |
+| LTV rows with zero revenue | 113 |
 
-## Actionable Insights From The Dashboard
-- Compare channel-attributed revenue, spend and cost per purchasing customer
-- Inspect mature customer cohort value across observation horizons
-- Detect campaigns producing **ROAS below 1 (attributed revenue below advertising spend)** that should be optimized  or discontinued
-- Compare how metrics change under **different attribution models**
+| Horizon | Eligible customers | Mean observed revenue |
+|---|---:|---:|
+| 30 days | 80 | 26.16025 |
+| 60 days | 80 | 63.48175 |
+| 90 days | 80 | 83.042875 |
+| 180 days | 63 | 96.125556 |
 
-## Notes
-- The .pbix file is stored using Git LFS due to its size.
-- The actual .env file is never uploaded; use .env.example as a template.
-- Sample data is fictional and does not represent real customer information.
+The report's initial date range is 2024-11-01 through 2025-11-27. Google Ads attributed revenue is 1,171.85 under linear attribution and 1,137.10 under time decay, rather than the full value of every shared order.
 
-## Reproduce the data pipeline
+## Run the pipeline
 
-Python 3.12 + MySQL 8. Install `requirements.txt`, configure `.env`, then run `python -m scripts.run_pipeline` from the repository root. The bundled CSVs can be used directly; `python -m scripts.generate_data` regenerates the sample. The configured user needs database/table creation permissions.
+Use Python 3.12 and MySQL 8.0.42. From the repository root:
 
-Run checks with `pip install -r requirements-dev.txt` then `python -m pytest -q`. LTV includes zero-purchase acquired customers and only fully observed horizons. `ANALYTICS_AS_OF_DATE` specifies the actual observation end; otherwise it is inferred conservatively from the latest source observation. Never set it to a future date just to make a cohort mature.
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
 
-Attribution preserves unassigned orders in an explicit Unattributed channel and distributes whole cents without losing revenue.
+Copy `.env.example` to `.env`, supply your own MySQL credentials, and set `MYSQL_DB=analytics_portfolio_corrected` to match the committed report. The pipeline user needs database/table creation permissions. Do not commit the real `.env`.
 
-## Power BI validation status
+```powershell
+python -m scripts.run_pipeline
+```
 
-The original PBIX and screenshots are historical. Python corrections do not modify the binary model automatically. Apply `powerbi/metric_fixes.dax` and complete `powerbi/VALIDATION.md` in Desktop before publishing the dashboard as corrected. CAC/attribution-cohort comparisons are limited by the sample's acquisition information.
+The pipeline loads the bundled CSVs, preserves order/customer identities, builds the four attribution models and computes eligible cohort LTV. Unassigned orders use the explicit **Unattributed** channel. Revenue is allocated in whole cents.
 
-The MySQL integration check is `python -m scripts.verify_metrics`. CI rebuilds twice against MySQL 8 and verifies per-order conservation for all four attribution models, purchase/customer identity and LTV domain constraints.
+`ANALYTICS_AS_OF_DATE` sets the actual observation end; otherwise it is inferred conservatively from source observations. Do not move this date forward merely to make a cohort mature.
 
-## Refresh a Desktop copy without a local Python environment
+### Refresh Power BI
 
-The metrics workflow tests against MySQL 8.0.42 and publishes a `marketing-corrected-mysql-snapshot` artifact after the pipeline passes. Its `marketing_corregido.sql` file creates **analytics_portfolio_corrected** and imports the eight corrected tables. It does not drop or overwrite the original `analytics_portfolio` database. This is a one-time import into a fresh destination; an existing destination must be handled explicitly before a repeat import.
+The eight Power Query queries connect to `localhost / analytics_portfolio_corrected`, with `ReturnSingleDatabase=true` and `CreateNavigationProperties=false`. Enter database credentials locally through Power BI's data-source settings.
 
-CI restores the SQL into a separate database, compares primary-key-ordered row hashes and row counts for every table, reruns metric invariants, and verifies the source database remains unchanged. `snapshot-validation.json` records those checks and the snapshot hash.
+For another host or database, update the connection and navigation schema in each query. Preserve the query/table names so existing measures and visuals remain valid. The report uses `Calendar[YearMonth]` in ascending order, rather than month names without years.
 
-In Power BI, change the MySQL database and any Power Query navigation schema keys to `analytics_portfolio_corrected`. Preserve the existing Power Query query names so the DAX table references remain valid. Then refresh, complete the Desktop checklist, and save a new PBIX. Display LTV and purchasing-customer cost separately rather than a ratio of mismatched cohort/period populations.
+### Import without a local Python environment
+
+The [metrics workflow](https://github.com/rirts/marketing-attribution-ltv-platform/actions/workflows/ci.yml) publishes a `marketing-corrected-mysql-snapshot` artifact containing `marketing_corregido.sql` and validation manifests. Run the workflow or use a successful recent run.
+
+The SQL creates a fresh **analytics_portfolio_corrected** database and imports the eight corrected tables. It preserves the original **analytics_portfolio** database. Import once into a fresh destination; diagnose any partial import before trying again.
+
+CI restores the SQL, compares every source table by ordered row hash, reruns metric invariants and verifies that the original database is unchanged. Artifacts are retained for 30 days.
+
+## Validation
+
+```powershell
+pip install -r requirements-dev.txt
+python -m pytest -q
+python -m scripts.verify_metrics
+python -m scripts.verify_powerbi
+```
+
+The last command compares every imported source value in the committed PBIX with the configured MySQL database, checks the Power Query connections, the corrected revenue-card alias, removal of the LTV/CAC measure, model selectors and the monthly axis. It allows 2 ms of date readback tolerance for VertiPaq decoding.
+
+CI rebuilds twice against MySQL 8.0.42, checks attribution and purchase identity, validates the committed PBIX, and exports/restores the SQL snapshot. If source data changes, update and refresh the PBIX too; stale imported data should fail this check.
+
+Readback and definition checks do **not** execute DAX or render visuals. Desktop refresh and interaction checks were completed separately; see [Power BI validation](powerbi/VALIDATION.md). [metric_fixes.dax](powerbi/metric_fixes.dax) records the applied measure definitions, and [regression_checks.dax](powerbi/regression_checks.dax) contains queries for Desktop validation.
+
+## Structure
+
+- `data/raw/`: synthetic source CSVs.
+- `scripts/`: ingestion, attribution, cohort LTV and validation.
+- `common/`: shared database connection.
+- `sql/`: schema.
+- `powerbi/`: report, applied DAX, validation notes and a current Desktop screenshot.
+
+The compact PBIX is stored directly in Git as a binary file; Git LFS is not required.
+
